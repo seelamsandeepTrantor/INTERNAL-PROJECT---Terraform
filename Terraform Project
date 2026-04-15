@@ -8,7 +8,7 @@ Project Goal:-
     7. Access app via port 8080
     8. Use Terraform init/plan/apply
     9. Clean up infra [Terraform Destroy]
-###################Install Terraform EC2#####################
+################### Install Terraform EC2 ####################
 sudo yum update -y
 yum install -y yum-utils
 yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
@@ -23,7 +23,7 @@ AWS Access Key ID [****************SNNP]: Your key id
 AWS Secret Access Key [****************GypP]: your secret key
 Default region name [ap-south-1]: us-east-1
 Default output format [json]: json
-###############Create Terraform Project#########################
+############### Create Terraform Project #########################
 mkdir terraform-project
 cd terraform-project
 vi main.tf
@@ -52,8 +52,7 @@ Target group (8080)
 Python HTTP server
         ↓
 /home/ec2-user/index.html
-#######################################################################
-AUTO SCALLING:-
+###################### AUTO SCALLING #####################
 Test Auto Scaling
 Run inside EC2:
 sudo yum install -y stress
@@ -79,8 +78,7 @@ Scale IN triggers
     • Instance count reduces 
     • Example: 
 3 → 2 instances
-#####################################################
-Main.tf explanation:-
+################# Main.tf explanation ###################
    Provider Block
        provider "aws" {
        region = "us-east-1”
@@ -148,8 +146,7 @@ desired = 2	Initial count
               If CPU > 70% → Scale OUT
                Low CPU
               If CPU < 20% → Scale IN
-              
-      main.tf and variables.tf:-
+################# main.tf and variables.tf Explanation ######################
     • They are automatically connected by Terraform.
     • Terraform reads ALL .tf files in the same folder together.
     • Terraform internally combines them like:
