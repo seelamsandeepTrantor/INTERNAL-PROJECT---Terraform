@@ -1,0 +1,191 @@
+Project Goal:-
+    1. Create AWS Free tier Account – Define IAM Role
+    2. Create EC2
+    3. Install Terraform on Ec2 Instance 
+    4. Install / Deploy web server [Basic HTTP web site or page]
+    5. Create Auto Scaling (2–5 instances)
+    6. Add Load Balancer – To distribute Traffic
+    7. Access app via port 8080
+    8. Use Terraform init/plan/apply
+    9. Clean up infra [Terraform Destroy]
+###################Install Terraform EC2#####################
+sudo yum update -y
+yum install -y yum-utils
+yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+yum -y install terraform
+terraform -version [Terraform v1.14.8]
+Configure AWS CLI
+Terraform needs AWS access.
+Commands:-
+aws configure
+[root@ip-172-31-64-74 terraform-project]# aws configure
+AWS Access Key ID [****************SNNP]: Your key id
+AWS Secret Access Key [****************GypP]: your secret key
+Default region name [ap-south-1]: us-east-1
+Default output format [json]: json
+###############Create Terraform Project#########################
+mkdir terraform-project
+cd terraform-project
+vi main.tf
+terraform init
+terraform plan
+terraform apply
+output:- Display your load balancer dns
+Open browser/incongintion mode
+http://<load-balancer-dns>
+once we refresh ,  IP’s are changed [browser+incognition mode}
+this is what “ALB is working fine to distribute traffic.
+This output comes from the user_data script in main.tf,
+specifically from the echo command writing to index.html.
+    • Creates a web page
+    • Writes text into index.html
+    • $(hostname -f) → dynamically inserts instance hostname
+How it reaches browser:-
+Browser → Load Balancer → Target Group → EC2 → Apache → index.html
+Apache (httpd) serves this file:
+/var/www/html/index.html
+Flow:-
+ALB (port 80/8080)
+        ↓
+Target group (8080)
+        ↓
+Python HTTP server
+        ↓
+/home/ec2-user/index.html
+#######################################################################
+AUTO SCALLING:-
+Test Auto Scaling
+Run inside EC2:
+sudo yum install -y stress
+stress --cpu 2 --timeout 300
+1. Install stress
+sudo yum install -y stress
+2. Run CPU load
+After 1–2 minutes:
+CloudWatch detects:
+CPUUtilization > 70%
+Then:
+ Scale OUT triggers
+    • ASG increases instances 
+    • Example:
+Before: 2 instances
+After: 3 instances
+After 5 minutes (timeout ends)
+CPU drops
+Then:
+CloudWatch detects:
+CPUUtilization < 20%
+Scale IN triggers
+    • Instance count reduces 
+    • Example: 
+3 → 2 instances
+#####################################################
+Main.tf explanation:-
+   Provider Block
+       provider "aws" {
+       region = "us-east-1”
+}
+What it does?
+Tells Terraform: which cloud provider to use
+Region = where resources will be created
+2. AMI (Machine Image)
+I used a data source to dynamically fetch the latest Amazon Linux AMI instead of hardcoding values.
+3. VPC & Subnets
+I reused the default VPC and subnets
+4. Security Group
+it decides:
+Who can come IN
+What can go OUT
+1. Ingress (Incoming Traffic)
+Ingress = traffic coming INTO your server
+{
+cidr_blocks = ["0.0.0.0/0"]
+}
+ Means:
+    • Anyone from internet can access your app on port 8080 
+Egress (Outgoing Traffic)
+Egress = traffic going OUT from your server
+cidr_blocks = ["0.0.0.0/0"]
+}
+ Means:
+    • Your server can connect to anywhere (internet) 
+Port	Purpose
+80	Load Balancer traffic
+8080	Web server
+All outbound	Internet access
+      
+      5. Launch Template (VERY IMPORTANT)
+      Defines how EC2 instances should be created:
+        ◦ AMI 
+        ◦ Instance type 
+        ◦ Security group 
+        ◦ Startup script (user_data)
+          6. Target Group
+          What it does
+          Acts as a bridge between ALB and EC2
+          Sends traffic to instances on port 8080
+          7. Load Balancer (ALB)
+          8. Listener
+          What it does
+            ▪ Listens on port 80
+            ▪ Forwards traffic to target group 
+              9. Auto Scaling Group (CORE)
+              What it does
+Setting	Meaning
+min_size = 2	Minimum instances
+max_size = 5	Maximum instances
+desired = 2	Initial count
+              Uses Launch Template to create instances
+              10. Scaling Policies
+              Scale OUT
+              Adds 1 instance
+              
+              Scale IN
+               Removes 1 instance
+              
+              11. CloudWatch Alarms
+              High CPU
+              If CPU > 70% → Scale OUT
+               Low CPU
+              If CPU < 20% → Scale IN
+              
+      main.tf and variables.tf:-
+    • They are automatically connected by Terraform.
+    • Terraform reads ALL .tf files in the same folder together.
+    • Terraform internally combines them like:
+    • (main.tf + variables.tf) = ONE configuration.
+          How they connect?
+In variables.tf:
+var.instance_type → refers to variable defined in variables.tf
+variable "instance_type" {
+  default = "t3.micro"
+}
+In main.tf:
+var.instance_type → refers to variable defined in variables.tf
+What is variables.tf?
+It is used to define input variables
+Think like:
+variables.tf = configuration inputs
+main.tf      = actual infrastructure
+How variables are USED in main.tf?
+Example:
+instance_type → var.instance_type
+Terraform replaces:
+var.instance_type → "t3.micro"
+How Terraform reads it (Flow)?
+When you run:
+Terraform does:
+    1. Reads main.tf
+    2. Reads variables.tf
+    3. Replaces all var.* values 
+    4. Executes infrastructure
+       What is terraform.tfvars?
+    • It is used to override default values from variables.tf
+    • Instead of default values, companies use:
+    • terraform.tfvars
+    • Environment-specific configs
+Example:
+variables.tf  → default values
+terraform.tfvars → override values
+main.tf → uses final values
+###############################################################
