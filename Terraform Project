@@ -40,7 +40,7 @@ specifically from the echo command writing to index.html.
     • Creates a web page
     • Writes text into index.html
     • $(hostname -f) → dynamically inserts instance hostname
-How it reaches browser:-
+##################### How it reaches browser ####################
 Browser → Load Balancer → Target Group → EC2 → Apache → index.html
 Apache (httpd) serves this file:
 /var/www/html/index.html
